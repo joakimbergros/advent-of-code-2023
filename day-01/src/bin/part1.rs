@@ -23,7 +23,7 @@
 /// 
 /// Consider your entire calibration document. What is the sum of all of the calibration values?
 fn main() {
-    let str = include_str!("part1.txt");
+    let str = include_str!("input.txt");
     let sum: u32 = get_calibration_values(str).iter().sum();
     println!("{sum}");
 }
