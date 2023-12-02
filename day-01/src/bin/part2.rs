@@ -16,7 +16,7 @@
 /// 
 /// What is the sum of all of the calibration values?
 fn main() {
-    let str = include_str!("input.txt");
+    let str = include_str!("part2.txt");
     let sum = process_input(str);
     println!("{sum}");
 }
