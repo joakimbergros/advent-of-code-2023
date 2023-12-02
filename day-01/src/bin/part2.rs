@@ -1,5 +1,3 @@
-use regex::Regex;
-
 /// --- Part Two ---
 /// 
 /// Your calculation isn't quite right. It looks like some of the digits are actually spelled out with letters: one, two, three, four, five, six, seven, eight, and nine also count as valid "digits".
@@ -19,82 +17,60 @@ use regex::Regex;
 /// What is the sum of all of the calibration values?
 fn main() {
     let str = include_str!("input.txt");
-    let sum = get_calibration_values(str);
-    println!("{:?}", sum);
-    println!("{:?}", sum.iter().sum::<u32>());
+    let sum = process_input(str);
+    println!("{sum}");
 }
 
-const REGEX: &str = r"(one)|(two)|(three)|(four)|(five)|(six)|(seven)|(eight)|(nine)|([0-9])";
+fn process_input(input: &str) -> String {
+    let output = input
+        .lines()
+        .map(process_line)
+        .sum::<u32>();
 
-fn string_to_number(string: &str) -> u32 {
-    match string {
-        "zero" => 0,
-        "0" => 0,
-        "one" => 1,
-        "1" => 1,
-        "two" => 2,
-        "2" => 2,
-        "three" => 3,
-        "3" => 3,
-        "four" => 4,
-        "4" => 4,
-        "five" => 5,
-        "5" => 5,
-        "six" => 6,
-        "6" => 6,
-        "seven" => 7,
-        "7" => 7,
-        "eight" => 8,
-        "8" => 8,
-        "nine" => 9,
-        "9" => 9,
-        _ => unreachable!("Should have everything covered!")
-    }
+    output.to_string()
 }
 
-fn get_calibration_values(input: &str) -> Vec<u32> {
-    let re = Regex::new(REGEX).unwrap();
+fn process_line(line: &str) -> u32 {
+    let mut index = 0;
+    let better_chars = std::iter::from_fn(move || {
+        let reduced_line = &line[index..];
+        index += 1;
 
-    for line in input.lines() {
-        let num = match re.find_iter(line)
-            .map(|m| string_to_number(m.as_str()))
-            .collect::<Vec<_>>()
-            .as_slice() {
-                [x] => x * 10 + x,
-                [x, .., y] => x * 10 + y,
-                _ => unreachable!("The vec should not be able to be empty!")
-            };
-        println!("String is: {} and number is {}", line, num);
+        let result = if reduced_line.starts_with("one") {
+            Some('1')
+        } else if reduced_line.starts_with("two") {
+            Some('2')
+        } else if reduced_line.starts_with("three") {
+            Some('3')
+        } else if reduced_line.starts_with("four") {
+            Some('4')
+        } else if reduced_line.starts_with("five") {
+            Some('5')
+        } else if reduced_line.starts_with("six") {
+            Some('6')
+        } else if reduced_line.starts_with("seven") {
+            Some('7')
+        } else if reduced_line.starts_with("eight") {
+            Some('8')
+        } else if reduced_line.starts_with("nine") {
+            Some('9')
+        } else {
+            reduced_line.chars().next()
+        };
+
+        result
+    });
+
+    let mut it = better_chars
+        .filter_map(|character| {
+            character.to_digit(10)
+        });
+    let first = it.next().expect("should be a number");
+
+    match it.last() {
+        Some(num) => first * 10 + num,
+        None => first * 10 + first,
     }
-
-    vec![]
-
-    /* input.lines()
-        .map(|line| {
-            match re.find_iter(line)
-                .map(|m| string_to_number(m.as_str()))
-                .collect::<Vec<_>>()
-                .as_slice() {
-                    [x] => x * 10 + x,
-                    [x, .., y] => x * 10 + y,
-                    _ => unreachable!("The vec should not be able to be empty!")
-                }})
-        .collect() */
-
-    /* for line in input.lines() {
-        match re.find_iter(line)
-            .map(|m| string_to_number(m.as_str()))
-            .collect::<Vec<_>>()
-            .as_slice() {
-                [x] => {
-                vec![x.to_owned(), x.to_owned()].iter().fold(0, |a, i| a * 10 + i)
-                },
-                [x, .., y] => {
-                    vec![x.to_owned(), y.to_owned()].iter().fold(0, |a, i| a * 10 + i)
-                },
-                _ => unreachable!("The vec should not be able to be empty!")
-            };
-    } */
 }
 
 #[cfg(test)]
@@ -111,6 +87,6 @@ xtwone3four
 zoneight234
 7pqrstsixteen";
         
-        assert_eq!(get_calibration_values(str), vec![29,83,13,24,42,14,76]);
+        assert_eq!("281", process_input(str));
     }
 }

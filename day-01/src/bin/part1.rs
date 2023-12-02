@@ -24,24 +24,31 @@
 /// Consider your entire calibration document. What is the sum of all of the calibration values?
 fn main() {
     let str = include_str!("input.txt");
-    let sum: u32 = get_calibration_values(str).iter().sum();
+    let sum = process_input(str);
     println!("{sum}");
 }
 
-fn get_calibration_values(input: &str) -> Vec<u32> {
-    input.lines()
-        .map(|lines| match lines.chars()
-            .filter_map(|char| {
-                char.is_ascii_digit()
-                    .then(|| char.to_digit(10).unwrap())
-            })
-            .collect::<Vec<_>>()
-            .as_slice() {
-                [x] => vec![x.to_owned(), x.to_owned()].iter().fold(0, |a, i| a * 10 + i),
-                [x, .., y] => vec![x.to_owned(), y.to_owned()].iter().fold(0, |a, i| a * 10 + i),
-                _ => unreachable!("The vec should not be able to be empty!"),
-            })
-        .collect()
+/// https://www.youtube.com/watch?v=JOgQMjpGum0
+fn process_input(input: &str) -> String {
+    input
+        .lines()
+        .map(process_line)
+        .sum::<u32>()
+        .to_string()
+}
+
+fn process_line(line: &str) -> u32 {
+    let mut it = line
+        .chars()
+        .filter_map(|character| {
+            character.to_digit(10)
+        });
+    let first = it.next().expect("should be a number");
+
+    match it.last() {
+        Some(num) => first * 10 + num,
+        None => first * 10 + first,
+    }
 }
 
 #[cfg(test)]
@@ -55,6 +62,6 @@ pqr3stu8vwx
 a1b2c3d4e5f
 treb7uchet";
         
-        assert_eq!(get_calibration_values(str), vec![12,38,15,77]);
+        assert_eq!("142", process_input(str));
     }
 }
