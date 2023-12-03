@@ -1,5 +1,3 @@
-use std::default;
-
 /// --- Day 2: Cube Conundrum ---
 /// 
 /// You're launched high into the atmosphere! The apex of your trajectory just barely reaches the surface of a large island floating in the sky. You gently land in a fluffy pile of leaves. It's quite cold, but you don't see much snow. An Elf runs over to greet you.
@@ -33,118 +31,48 @@ fn main() {
     println!("{sum}");
 }
 
-
-const GAME_ITERATION_INDEX: usize = 5;
-
 fn process_input(input: &str) -> String {
-    let score = input.lines()
+    let test = input.lines()
         .map(|line| {
-            let mut game = Game::default();
-
-            line.split(|char| {
-                char == ':' || char == ';'
-            })
-            .enumerate()
-            .for_each(|(index,line)| {
+            let (mut game_number, mut red_count, mut green_count, mut blue_count, mut possible) = (0 as u32, 0 as u32, 0 as u32, 0 as u32, true);
+            for (index, value) in line
+                .split(|s|  s == ':' || s == ';' || s == ',')
+                .enumerate() {
                 if index == 0 {
-                    game.iteration = parse_iteration(line);
+                    game_number = value[5..].parse::<u32>().unwrap();
                 } else {
-                    game.add_play(parse_played_blocks(line));
+                    let count = value.trim().split(' ').next().unwrap().parse::<u32>().unwrap();
+                    if value.ends_with("red") && count > red_count {
+                        red_count = count;
+                        if red_count > 12 {
+                            possible = false
+                        }
+                    } else if value.ends_with("green") && count > green_count {
+                        green_count = count;
+                        if green_count > 13 {
+                            possible = false
+                        }
+                    } else if value.ends_with("blue") && count > blue_count {
+                        blue_count = count;
+                        if blue_count > 14 {
+                            possible = false
+                        }
+                    }
                 }
-            });
-            //println!("{:?}", game);
-
-            game
-        })
-        .filter_map(|game| {
-            match game.validate() {
-                true => Some(game.iteration),
-                false => None,
             }
+
+            println!("{:?} - {:?} - {:?} - {:?} - {:?}", game_number, red_count, green_count, blue_count, possible);
+            (game_number, red_count, green_count, blue_count, possible)
         })
-        .sum::<u32>();
-
-    println!("{:?}", score);
-
-    /* score.iter() */
-
-    /* for game in score {
-        println!("{} overlimit status is {}", game.iteration, game.validate())
-    } */
-
-    String::from("")
-}
-
-// TODO Safety, although we know the data is Ok
-fn parse_iteration(line: &str) -> u32 {
-    let number = &line[GAME_ITERATION_INDEX..];
-    number.parse().unwrap()
-}
-
-fn parse_played_blocks(line: &str) -> Vec<Block> {
-    line.trim_start()
-        .split(", ")
-        .map(|block| {
-            let count = block.chars().next().unwrap().to_digit(10).unwrap();
-            if block.ends_with("red") {
-                Block::Red(count)
-            } else if block.ends_with("blue") {
-                Block::Blue(count)
-            } else if block.ends_with("green") {
-                Block::Green(count)
+        .fold(0, |acc, val| {
+            if val.4 == true {
+                acc + val.0
             } else {
-                unreachable!("All colors should be covered, but string was '{}'", block);
+                acc
             }
-        })
-        .collect::<Vec<Block>>()
-}
-
-fn parse_line() {
-
-}
-
-#[derive(Default, Debug)]
-struct Game {
-    iteration: u32,
-    played_blocks: Vec<Vec<Block>>
-}
-
-impl Game {
-    const MAX_RED_CUBES: u32 = 12;
-    const MAX_GREEN_CUBES: u32 = 13;
-    const MAX_BLUE_CUBES: u32 = 14;
-
-    fn from(iteration: u32) -> Self {
-        Game {
-            iteration,
-            ..Default::default()
-        }
-    }
-
-    fn add_play(&mut self, play: Vec<Block>) {
-        self.played_blocks.push(play);
-    }
-
-    fn validate(&self) -> bool {
-        let sums = self.played_blocks
-            .iter()
-            .flatten()
-            .fold((0,0,0), |(red, green, blue), block| {
-                match block {
-                    Block::Red(val) => (red + val, green, blue),
-                    Block::Blue(val) => (red, green, blue + val),
-                    Block::Green(val) => (red, green + val, blue)
-                }
-            });
-        sums.0 <= Game::MAX_RED_CUBES || sums.1 <= Game::MAX_GREEN_CUBES ||sums.2 <= Game::MAX_BLUE_CUBES
-    }
-}
-
-#[derive(Debug)]
-enum Block {
-    Blue(u32),
-    Red(u32),
-    Green(u32)
+        });
+    println!("{test}");
+    test.to_string()
 }
 
 #[cfg(test)]
@@ -159,6 +87,6 @@ Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red
 Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red
 Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green";
         
-        assert_eq!("142", process_input(str));
+        assert_eq!("8", process_input(str));
     }
 }
