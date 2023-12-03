@@ -32,47 +32,94 @@ fn main() {
 }
 
 fn process_input(input: &str) -> String {
-    let test = input.lines()
+    let count = input.lines()
         .map(|line| {
-            let (mut game_number, mut red_count, mut green_count, mut blue_count, mut possible) = (0 as u32, 0 as u32, 0 as u32, 0 as u32, true);
+            let mut game = Game::default();
             for (index, value) in line
                 .split(|s|  s == ':' || s == ';' || s == ',')
                 .enumerate() {
                 if index == 0 {
-                    game_number = value[5..].parse::<u32>().unwrap();
+                    //game_number = value[5..].parse::<u32>().unwrap();
+                    game.number = value[5..].parse::<u32>().unwrap();
                 } else {
                     let count = value.trim().split(' ').next().unwrap().parse::<u32>().unwrap();
-                    if value.ends_with("red") && count > red_count {
-                        red_count = count;
-                        if red_count > 12 {
-                            possible = false
-                        }
-                    } else if value.ends_with("green") && count > green_count {
-                        green_count = count;
-                        if green_count > 13 {
-                            possible = false
-                        }
-                    } else if value.ends_with("blue") && count > blue_count {
-                        blue_count = count;
-                        if blue_count > 14 {
-                            possible = false
-                        }
+                    let mut color = Color::Undefined;
+                    if value.ends_with("red") {
+                        color = Color::Red;
+                    } else if value.ends_with("green") {
+                        color = Color::Green;
+                    } else if value.ends_with("blue") {
+                        color = Color::Blue;
                     }
+                    game.set_count(count, color);
                 }
             }
-
-            println!("{:?} - {:?} - {:?} - {:?} - {:?}", game_number, red_count, green_count, blue_count, possible);
-            (game_number, red_count, green_count, blue_count, possible)
+            game
         })
-        .fold(0, |acc, val| {
-            if val.4 == true {
-                acc + val.0
+        .fold(0, |acc, game| {
+            if !game.overflown {
+                acc + game.number
             } else {
                 acc
             }
         });
-    println!("{test}");
-    test.to_string()
+    println!("{count}");
+    count.to_string()
+}
+
+#[derive(Default, Debug)]
+struct Game {
+    number: u32,
+    red: u32,
+    green: u32,
+    blue: u32,
+    overflown: bool
+}
+
+impl Game {
+    fn set_count(&mut self, count: u32, color: Color) {
+        match color {
+            Color::Red => {
+                if count > 12 {
+                    self.overflown = true;
+                };
+
+                if count < self.red {
+                    return;
+                }
+
+                self.red = count;
+            },
+            Color::Green => {
+                if count > 13 {
+                    self.overflown = true;
+                };
+
+                if count < self.green {
+                    return;
+                }
+                self.green = count;
+            },
+            Color::Blue => {
+                if count > 14 {
+                    self.overflown = true;
+                };
+
+                if count < self.blue {
+                    return;
+                }
+                self.blue = count;
+            },
+            Color::Undefined => panic!("Should not be used")
+        }
+    }
+}   
+
+enum Color {
+    Undefined,
+    Red,
+    Green,
+    Blue
 }
 
 #[cfg(test)]
