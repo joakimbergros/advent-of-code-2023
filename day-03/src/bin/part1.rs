@@ -1,15 +1,35 @@
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::HashMap;
 
 /// 
 fn main() {
-    let str = include_str!("part1.txt");
-    let sum = process_input(str);
-    println!("{sum}");
+
+    let num = '2';
+    let sym = '*';
+    let node1 = Node::new_number(&num, Coordinate::from(1, 2));
+    let node2 = Node::new_symbol(&sym, Coordinate::from(1, 3));
+
+    let list = vec![node1, node2];
+
+    for (index, node) in list.iter_mut().enumerate() {
+        println!("Checking {:?}", node);
+        if index > 0 && list.contains(list[index]) {
+
+            println!("We have neigbour!");
+        }
+    }
+
+    dbg!(&list[0]);
+    dbg!(&list[1]);
+
+    //let str = include_str!("part1.txt");
+    //let sum = process_input(str);
+    //println!("{sum}");
 }
 
 fn process_input(input: &str) -> String {
     let mut numbers: HashMap<Coordinate, char> = HashMap::new();
     let mut symbols: HashMap<Coordinate, char> = HashMap::new();
+    let mut matches: Vec<(&Coordinate, &char)> = vec![];
 
     for (line_index, line) in input.lines().take(5).enumerate() {
         for (char_index, char) in line.chars().enumerate() {
@@ -24,70 +44,68 @@ fn process_input(input: &str) -> String {
     }
 
     for (coordinate, char) in &numbers {
-        dbg!(coordinate);
-        dbg!(r#char);
         let neighbours = vec![
-            Coordinate::from(coordinate.y - 1, coordinate.x - 1), Coordinate::from(coordinate.y - 1, coordinate.x), Coordinate::from(coordinate.y - 1, coordinate.x + 1),
-            Coordinate::from(coordinate.y, coordinate.x - 1),                                                       Coordinate::from(coordinate.y, coordinate.x + 1),
-            Coordinate::from(coordinate.y + 1, coordinate.x - 1), Coordinate::from(coordinate.y + 1, coordinate.x), Coordinate::from(coordinate.y + 1, coordinate.x + 1),
+            Coordinate::from(coordinate.row - 1, coordinate.col - 1), Coordinate::from(coordinate.row - 1, coordinate.col), Coordinate::from(coordinate.row - 1, coordinate.col + 1),
+            Coordinate::from(coordinate.row, coordinate.col - 1),                                                           Coordinate::from(coordinate.row, coordinate.col + 1),
+            Coordinate::from(coordinate.row + 1, coordinate.col - 1), Coordinate::from(coordinate.row + 1, coordinate.col), Coordinate::from(coordinate.row + 1, coordinate.col + 1),
         ];
+        //println!("neighbours: {:?}", neighbours);
         let has_neighbours = neighbours
             .iter()
             .filter(|neighbour| {
                 symbols.contains_key(neighbour)
             })
+            //.inspect(|i| println!("neighbour: {:?}", i))
             .count() > 0;
 
         if has_neighbours {
-            println!("{:?} at {:?} has a symbol neighbour", char, coordinate);
+            //println!("{:?} at {:?} has a symbol neighbour", char, coordinate);
+            matches.push((coordinate, char));
         }
-
-        //println!("{:?}", has_neighbours);
     }
 
-    // for line in input.lines() {
-    //     let mut map_line: Vec<char> = vec![];
-    //     for char in line.chars() {
-    //         map_line.push(char);
-    //     }
-    //     map.push(map_line);
-    // }
-    // println!("{:?}", map);
+    matches.sort_by(|left, right| {
+        left.0.cmp(right.0)
+    });
 
-    // for (i, set) in map.iter().take(1).enumerate() {
-    //     let set_len = set.len();
-
-    //     for (i, needle) in set.iter().enumerate() {
-    //         let is_digit = needle.is_digit(10);
-
-    //         // Check right
-    //         if is_digit && set_len > i && (set[i + 1] != '.' || !set[i + 1].is_digit(10)) {
-    //             let test = needle.is_symbol();
-    //         }
-
-    //         // Check left
-    //         if i > 0 && is_digit {
-                
-    //         }
-
-    //         // Check north
-
-    //         // Check south
-    //     }
-    // }
+    println!("{:?}", matches);
 
     String::from("")
 }
 
-#[derive(PartialEq, Eq, Hash, Debug)]
+#[derive(PartialEq, Eq, Ord, PartialOrd, Hash, Debug)]
 struct Coordinate {
-    x: isize,
-    y: isize
+    row: isize,
+    col: isize
 }
 
 impl Coordinate {
-    fn from(x: isize, y: isize) -> Self {
-        Coordinate { x, y }
+    fn from(row: isize, col: isize) -> Self {
+        Coordinate { row, col }
+    }
+}
+
+#[derive(PartialEq, Eq, Ord, PartialOrd, Hash, Debug)]
+enum Variant {
+    Number,
+    Symbol
+}
+
+#[derive(PartialEq, Eq, Ord, PartialOrd, Hash, Debug)]
+struct Node<'a> {
+    value: &'a char,
+    link: Option<&'a Self>,
+    variant: Variant,
+    coordinate: Coordinate
+}
+
+impl<'a> Node<'a> {
+    fn new_number(value: &'a char, coordinate: Coordinate) -> Self {
+        Node { value, link: None, variant: Variant::Number, coordinate }
+    }
+
+    fn new_symbol(value: &'a char, coordinate: Coordinate) -> Self {
+        Node { value, link: None, variant: Variant::Symbol, coordinate }
     }
 }
 
