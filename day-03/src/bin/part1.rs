@@ -1,9 +1,9 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, BTreeMap};
 
 /// 
 fn main() {
 
-    let num = '2';
+    /* let num = '2';
     let sym = '*';
     let node1 = Node::new_number(&num, Coordinate::from(1, 2));
     let node2 = Node::new_symbol(&sym, Coordinate::from(1, 3));
@@ -19,9 +19,43 @@ fn main() {
     }
 
     dbg!(&list[0]);
-    dbg!(&list[1]);
+    dbg!(&list[1]); */
 
-    //let str = include_str!("part1.txt");
+    let str = include_str!("part1.txt");
+
+    let tree = str.lines().enumerate().take(1).flat_map(|(y, line)| {
+        line.chars().enumerate().map(move |(x, character)| {
+            ((y, x), match character {
+                '.' => Value::Empty,
+                c if c.is_ascii_digit() => Value::Number(c.to_digit(10).expect("Is a valid number")),
+                c => Value::Symbol(c)
+            })
+        })
+    })
+    .collect::<BTreeMap<(usize, usize), Value>>();
+
+    dbg!(tree);
+
+    /* let mut map: Vec<((isize, isize), usize, &char)> = vec![];
+    let mut current_symbol = '.'; */
+
+
+
+    /* for (row, line) in str.lines().enumerate() {
+        for (col, char) in line.chars().enumerate() {
+            if char == '.' {
+                continue;
+            }
+
+            if char.is_digit(10) {
+                map.push(((row as isize, col as isize), 1, &char));
+                continue;
+            }
+
+            
+        }
+    } */
+
     //let sum = process_input(str);
     //println!("{sum}");
 }
@@ -89,6 +123,13 @@ impl Coordinate {
 enum Variant {
     Number,
     Symbol
+}
+
+#[derive(PartialEq, Eq, Ord, PartialOrd, Hash, Debug)]
+enum Value {
+    Number(u32),
+    Symbol(char),
+    Empty
 }
 
 #[derive(PartialEq, Eq, Ord, PartialOrd, Hash, Debug)]
