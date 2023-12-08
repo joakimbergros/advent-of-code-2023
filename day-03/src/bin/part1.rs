@@ -1,110 +1,81 @@
-use std::collections::{HashMap, BTreeMap};
+use core::num;
+use std::collections::BTreeMap;
 
 /// 
 fn main() {
-
-    /* let num = '2';
-    let sym = '*';
-    let node1 = Node::new_number(&num, Coordinate::from(1, 2));
-    let node2 = Node::new_symbol(&sym, Coordinate::from(1, 3));
-
-    let list = vec![node1, node2];
-
-    for (index, node) in list.iter_mut().enumerate() {
-        println!("Checking {:?}", node);
-        if index > 0 && list.contains(list[index]) {
-
-            println!("We have neigbour!");
-        }
-    }
-
-    dbg!(&list[0]);
-    dbg!(&list[1]); */
-
     let str = include_str!("part1.txt");
+    let total = process_input(str);
 
-    let tree = str.lines().enumerate().take(1).flat_map(|(y, line)| {
-        line.chars().enumerate().map(move |(x, character)| {
-            ((y, x), match character {
+    dbg!(total);
+}
+
+fn process_input(input: &str) -> String {
+    let map = input.lines().enumerate().flat_map(|(row, line)| {
+        line.chars().enumerate().map(move |(col, character)| {
+            (Coordinate::from(row as isize, col as isize), match character {
                 '.' => Value::Empty,
-                c if c.is_ascii_digit() => Value::Number(c.to_digit(10).expect("Is a valid number")),
+                c if c.is_ascii_digit() => Value::Number(c.to_digit(10)
+                    .expect("Is a valid number")),
                 c => Value::Symbol(c)
             })
         })
     })
-    .collect::<BTreeMap<(usize, usize), Value>>();
+    .collect::<BTreeMap<Coordinate, Value>>();
 
-    dbg!(tree);
+    let mut numbers: Vec<Vec<((&Coordinate, &Value), Vec<Coordinate>)>> = vec![vec![]];
+    let mut number_counter = 0;
 
-    /* let mut map: Vec<((isize, isize), usize, &char)> = vec![];
-    let mut current_symbol = '.'; */
-
-
-
-    /* for (row, line) in str.lines().enumerate() {
-        for (col, char) in line.chars().enumerate() {
-            if char == '.' {
-                continue;
-            }
-
-            if char.is_digit(10) {
-                map.push(((row as isize, col as isize), 1, &char));
-                continue;
-            }
-
-            
+    // TODO Skip filtering away the empty arrays in this after...
+    for (coordinate, val) in &map {
+        if let Value::Number(_) = val {
+            let neighbours = vec![
+                Coordinate::from(coordinate.row - 1, coordinate.col - 1), Coordinate::from(coordinate.row - 1, coordinate.col), Coordinate::from(coordinate.row - 1, coordinate.col + 1),
+                Coordinate::from(coordinate.row, coordinate.col - 1),                                                           Coordinate::from(coordinate.row, coordinate.col + 1),
+                Coordinate::from(coordinate.row + 1, coordinate.col - 1), Coordinate::from(coordinate.row + 1, coordinate.col), Coordinate::from(coordinate.row + 1, coordinate.col + 1),
+            ];
+            numbers[number_counter].push(((coordinate, val), neighbours));
+            continue;
         }
-    } */
-
-    //let sum = process_input(str);
-    //println!("{sum}");
-}
-
-fn process_input(input: &str) -> String {
-    let mut numbers: HashMap<Coordinate, char> = HashMap::new();
-    let mut symbols: HashMap<Coordinate, char> = HashMap::new();
-    let mut matches: Vec<(&Coordinate, &char)> = vec![];
-
-    for (line_index, line) in input.lines().take(5).enumerate() {
-        for (char_index, char) in line.chars().enumerate() {
-            if char == '.' {
-                continue;
-            } else if char.is_digit(10) {
-                numbers.insert(Coordinate::from(line_index as isize, char_index as isize), char);
-            } else if char.is_symbol() {
-                symbols.insert(Coordinate::from(line_index as isize, char_index as isize), char);
-            }
-        }
+        
+        number_counter += 1;
+        numbers.push(vec![]);
     }
 
-    for (coordinate, char) in &numbers {
-        let neighbours = vec![
-            Coordinate::from(coordinate.row - 1, coordinate.col - 1), Coordinate::from(coordinate.row - 1, coordinate.col), Coordinate::from(coordinate.row - 1, coordinate.col + 1),
-            Coordinate::from(coordinate.row, coordinate.col - 1),                                                           Coordinate::from(coordinate.row, coordinate.col + 1),
-            Coordinate::from(coordinate.row + 1, coordinate.col - 1), Coordinate::from(coordinate.row + 1, coordinate.col), Coordinate::from(coordinate.row + 1, coordinate.col + 1),
-        ];
-        //println!("neighbours: {:?}", neighbours);
-        let has_neighbours = neighbours
+    numbers = numbers.into_iter().filter_map(|c| {
+        if c.is_empty() {
+            None
+        } else {
+            Some(c)
+        }
+    }).collect::<Vec<Vec<((&Coordinate, &Value), Vec<Coordinate>)>>>();
+
+    let mut total = 0;
+    for number in numbers {
+        let item_number = number
             .iter()
-            .filter(|neighbour| {
-                symbols.contains_key(neighbour)
+            .fold(0, |acc, v| acc * 10 + match v.0.1 {
+                Value::Number(num) => num,
+                _ => &0
+            });
+        
+        let is_part = number.iter().any(|v| {
+            v.1.iter().any(|n| {
+                if let Some(value) = &map.get(n) {
+                    if let Value::Symbol(_) = value {
+                        return true;
+                    }
+    
+                    false
+                } else { false }
             })
-            //.inspect(|i| println!("neighbour: {:?}", i))
-            .count() > 0;
+        });
 
-        if has_neighbours {
-            //println!("{:?} at {:?} has a symbol neighbour", char, coordinate);
-            matches.push((coordinate, char));
+        if is_part {
+            total += item_number;
         }
     }
 
-    matches.sort_by(|left, right| {
-        left.0.cmp(right.0)
-    });
-
-    println!("{:?}", matches);
-
-    String::from("")
+    total.to_string()
 }
 
 #[derive(PartialEq, Eq, Ord, PartialOrd, Hash, Debug)]
@@ -120,57 +91,10 @@ impl Coordinate {
 }
 
 #[derive(PartialEq, Eq, Ord, PartialOrd, Hash, Debug)]
-enum Variant {
-    Number,
-    Symbol
-}
-
-#[derive(PartialEq, Eq, Ord, PartialOrd, Hash, Debug)]
 enum Value {
     Number(u32),
     Symbol(char),
     Empty
-}
-
-#[derive(PartialEq, Eq, Ord, PartialOrd, Hash, Debug)]
-struct Node<'a> {
-    value: &'a char,
-    link: Option<&'a Self>,
-    variant: Variant,
-    coordinate: Coordinate
-}
-
-impl<'a> Node<'a> {
-    fn new_number(value: &'a char, coordinate: Coordinate) -> Self {
-        Node { value, link: None, variant: Variant::Number, coordinate }
-    }
-
-    fn new_symbol(value: &'a char, coordinate: Coordinate) -> Self {
-        Node { value, link: None, variant: Variant::Symbol, coordinate }
-    }
-}
-
-struct Symbol<'a> {
-    x: u32,
-    y: u32,
-    value: &'a char
-}
-
-struct Number {
-    x: u32,
-    y: u32,
-    len: u32,
-    value: u32
-}
-
-trait Symbolize {
-    fn is_symbol(&self) -> bool;
-}
-
-impl Symbolize for char {
-    fn is_symbol(&self) -> bool {
-        !self.is_alphabetic() || !self.is_alphanumeric()
-    }
 }
 
 #[cfg(test)]
@@ -190,6 +114,6 @@ mod tests {
 ...$.*....
 .664.598..";
         
-        assert_eq!("", process_input(str));
+        assert_eq!("4361", process_input(str));
     }
 }
