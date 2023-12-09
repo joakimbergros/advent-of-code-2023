@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, vec};
 
 /// 
 fn main() {
@@ -9,7 +9,7 @@ fn main() {
 }
 
 fn process_input(input: &str) -> String {
-    let map = input.lines().enumerate().take(10).flat_map(|(row, line)| {
+    let map = input.lines().enumerate().flat_map(|(row, line)| {
         line.chars().enumerate().map(move |(col, character)| {
             (Coordinate::new(row as isize, col as isize), match character {
                 '.' => Value::Empty,
@@ -21,46 +21,69 @@ fn process_input(input: &str) -> String {
     })
     .collect::<BTreeMap<Coordinate, Value>>();
 
-    // Index both number and symbol, then filter on any number containing symbol and then product
-
-    let mut numbers: Vec<Vec<((&Coordinate, &Value), Vec<Coordinate>)>> = vec![vec![]];
-    let mut number_counter = 0;
-    let mut cogs: Vec<Vec<((&Coordinate, &Value), Vec<Coordinate>)>> = vec![vec![]];
-    let mut cog_counter = 0;
-
-    for (coordinate, val) in &map {
-        let neighbours = vec![
-            Coordinate::new(coordinate.row - 1, coordinate.col - 1), Coordinate::new(coordinate.row - 1, coordinate.col), Coordinate::new(coordinate.row - 1, coordinate.col + 1),
-            Coordinate::new(coordinate.row, coordinate.col - 1),                                                           Coordinate::new(coordinate.row, coordinate.col + 1),
-            Coordinate::new(coordinate.row + 1, coordinate.col - 1), Coordinate::new(coordinate.row + 1, coordinate.col), Coordinate::new(coordinate.row + 1, coordinate.col + 1),
-        ];
-
-        match val {
-            Value::Number(_) => {
-                numbers[number_counter].push(((coordinate, val), neighbours));
-                continue;
-            },
+    let mut cog_map: BTreeMap<&Coordinate, Vec<u32>> = BTreeMap::new();
+    for (coordinate, value) in &map {
+        match value {
             Value::Symbol(sym) if *sym == '*' => {
-                cogs[cog_counter].push(((coordinate, val), neighbours));
-                continue;
+                cog_map.insert(coordinate, vec![]);
             },
-            _ => {
-                number_counter += 1;
-                numbers.push(vec![]);
-                cog_counter += 1;
-                cogs.push(vec![]);
-            }
+            _ => {}
         }
     }
 
-    numbers.iter()
-        .filter(|number| {
-            
-        })
+    let mut numbers: Vec<Vec<((&Coordinate, &Value), Vec<Coordinate>)>> = vec![vec![]];
+    let mut number_counter = 0;
 
-    dbg!(cogs);
+    // TODO Skip filtering away the empty arrays in this after...
+    for (coordinate, val) in &map {
+        if let Value::Number(_) = val {
+            let neighbours = vec![
+                Coordinate::new(coordinate.row - 1, coordinate.col - 1), Coordinate::new(coordinate.row - 1, coordinate.col), Coordinate::new(coordinate.row - 1, coordinate.col + 1),
+                Coordinate::new(coordinate.row, coordinate.col - 1),                                                           Coordinate::new(coordinate.row, coordinate.col + 1),
+                Coordinate::new(coordinate.row + 1, coordinate.col - 1), Coordinate::new(coordinate.row + 1, coordinate.col), Coordinate::new(coordinate.row + 1, coordinate.col + 1),
+            ];
+            numbers[number_counter].push(((coordinate, val), neighbours));
+            continue;
+        }
 
-    "_total".to_string()
+        number_counter += 1;
+            numbers.push(vec![]);
+    }
+
+    for (coordinate, batches) in cog_map.iter_mut() {
+        for batch in &numbers {
+            if !batch.iter()
+                .any(|item| {
+                    item.1.contains(coordinate)
+                }) {
+                continue;
+            };
+
+            let number = batch.iter()
+                .map(|item| {
+                    if let Value::Number(val) = item.0.1 {
+                        *val
+                    } else {
+                        0
+                    }
+                })
+                .fold(0, |acc, val| {
+                    acc * 10 + val
+                });
+
+            batches.push(number);
+        }
+    }
+
+    let total = cog_map.iter().filter_map(|cog| {
+        if cog.1.len() != 2 {
+            None
+        } else {
+            Some(cog.1.iter().product::<u32>())
+        }
+    }).sum::<u32>();
+
+    total.to_string()
 }
 
 #[derive(PartialEq, Eq, Ord, PartialOrd, Hash, Debug)]
@@ -74,12 +97,6 @@ impl Coordinate {
         Coordinate { row, col }
     }
 }
-
-/* struct Node<'a> {
-    coordinate: Coordinate,
-    value: &'a char,
-    neighbours: Vec<Coordinate>
-} */
 
 #[derive(PartialEq, Eq, Ord, PartialOrd, Hash, Debug)]
 enum Value {
