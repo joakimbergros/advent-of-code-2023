@@ -1,6 +1,5 @@
 use std::{collections::BTreeMap, vec};
 
-/// 
 fn main() {
     let str = include_str!("part2.txt");
     let total = process_input(str);

@@ -1,6 +1,5 @@
 use std::collections::BTreeMap;
 
-/// 
 fn main() {
     let str = include_str!("part1.txt");
     let total = process_input(str);
