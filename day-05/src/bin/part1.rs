@@ -2,17 +2,13 @@ use std::collections::BTreeMap;
 
 fn main() {
     let str = include_str!("part1.txt");
-
-    let map = Map::new(10, 50, 2);
-    dbg!(map.get_destination(52));
-
-    //let sum = process_input(str);
-    //println!("{sum}");
+    let sum = process_input(str);
+    println!("{sum}");
 }
 
 fn process_input(input: &str) -> String {
     let mut almanac_iterator = input.lines();
-    let seeds = almanac_iterator.next()
+    let mut seeds = almanac_iterator.next()
         .expect("Should be the first line")
         .split(": ")
         .last()
@@ -30,7 +26,7 @@ fn process_input(input: &str) -> String {
             continue;
         }
 
-        if !line.chars().next().expect("Line should not be empty").is_digit(10) {
+        if !line.chars().next().expect("Line should not be empty").is_ascii_digit() {
             current_category = match line {
                 "seed-to-soil map:" => Category::SeedToSoil,
                 "soil-to-fertilizer map:" => Category::SoilToFertilizer,
@@ -39,7 +35,7 @@ fn process_input(input: &str) -> String {
                 "light-to-temperature map:" => Category::LightToTemperature,
                 "temperature-to-humidity map:" => Category::TemperatureToHumidity,
                 "humidity-to-location map:" => Category::HumidityToLocation,
-                _ => Category::None
+                _ => unreachable!("Should always be a category assigned")
             };
 
             continue;
@@ -50,53 +46,89 @@ fn process_input(input: &str) -> String {
             .map(|number| number.parse::<u32>().expect("Should be a valid number"))
             .collect::<Vec<u32>>();
 
-        dbg!(&routing);
+        //dbg!(&routing);
 
-        shelf.add(current_category, Map::new(routing[0], routing[1], routing[2]));
+        shelf.set(current_category, Map::new(routing[0], routing[1], routing[2]));
     }
 
-    for seed in seeds {
+    let minimum_number = seeds.iter_mut()
+        .map(|seed| shelf.find_location(seed))
+        .min()
+        .expect("Should have a number");
 
-    }
-
-    dbg!(shelf);
-
-    String::from("")
+    minimum_number.to_string()
 }
 
+#[derive(Debug)]
 struct Seed {
-    number: u32
+    //start: u32,
+    route: Vec<u32>
 }
 
 impl Seed {
-    fn new(number: u32) -> Self {
-        Seed { number }
+    fn new(start: u32) -> Self {
+        Seed { /* start, */ route: vec![start] }
+    }
+
+    fn set(&mut self, next: u32) {
+        self.route.push(next);
+    }
+
+    fn get(&self) -> u32 {
+        *self.route.iter().last().expect("Should be at least one")
     }
 }
 
 #[derive(Debug)]
 struct Shelf {
-    maps: BTreeMap<Category, Vec<Map>>
+    shelf: BTreeMap<Category, Vec<Map>>
 }
 
 impl Shelf {
     fn new() -> Self {
         //let maps: BTreeMap<Category, Vec<Map>> = Category::values().into_iter().map(|c| (*c, vec![])).collect();
-        Shelf { maps: BTreeMap::new() }
+        Shelf { shelf: BTreeMap::new() }
     }
 
-    fn add(&mut self, category: Category, map: Map) {
-        self.maps.entry(category)
+    fn set(&mut self, category: Category, map: Map) {
+        self.shelf.entry(category)
             .and_modify(|list| list.push(map))
             .or_insert(vec![]);
     }
 
-    fn find_location(&self, seed: u32) -> u32 {
-        self.maps.iter()
-            .map(|(_, m)| m.iter()
-                .map(|map| map.get_destination(seed)))
+    fn find_location(&self, seed: &mut Seed) -> u32 {
+        dbg!(&seed);
+        let final_value = self.shelf.values()
+            .filter_map(|maps| {
+                match maps.iter()
+                    .filter_map(|map| {
+                        dbg!(&map);
+                        dbg!(&map.in_range(seed));
+                        match map.in_range(seed) {
+                            true => Some(map.redirect(seed)),
+                            false => None
+                        }
+                    })
+                    .inspect(|location| {
+                        dbg!(location);
+                    })
+                    .min() {
+                        Some(val) => {
+                            seed.set(val);
+                            Some(val)
+                        },
+                        None => {
+                            None
+                        }
+                    }
+            })
+            .inspect(|contender| {
+                dbg!(contender);
+            })
             .min()
-        2
+            .expect("Should have found a number");
+        dbg!(final_value);
+        final_value
     }
 }
 
@@ -112,10 +144,14 @@ impl Map {
         Map { destination, source, length }
     }
 
-    fn get_destination(&self, source: u32) -> u32 {
-        match source >= self.source && source <= self.source + self.length {
-            true => self.destination + (source - self.source),
-            false => source,
+    fn in_range(&self, source: &Seed) -> bool {
+        source.get() >= self.source && source.get() <= self.source + self.length
+    }
+
+    fn redirect(&self, source: &Seed) -> u32 {
+        match source.get() >= self.source && source.get() <= self.source + self.length {
+            true => self.destination + (source.get() - self.source),
+            false => source.get(),
         }
     }
 }
@@ -133,24 +169,44 @@ enum Category {
 }
 
 impl Category {
-    fn values() -> &'static [Category] {
-        static VALUES: [Category; 7] = [
-            Category::SeedToSoil,
-            Category::SoilToFertilizer,
-            Category::FertilizerToWater,
-            Category::WaterToLight,
-            Category::LightToTemperature,
-            Category::TemperatureToHumidity,
-            Category::HumidityToLocation,
-        ];
-
-        &VALUES
-    }
+    const VALUES: [Category; 7] = [
+        Category::SeedToSoil,
+        Category::SoilToFertilizer,
+        Category::FertilizerToWater,
+        Category::WaterToLight,
+        Category::LightToTemperature,
+        Category::TemperatureToHumidity,
+        Category::HumidityToLocation,
+    ];
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_in_range() {
+        let seed = Seed::new(99);
+        let map = Map::new(50 , 98, 2);
+
+        assert!(map.in_range(&seed));
+    }
+
+    #[test]
+    fn test_redirect() {
+        let seed = Seed::new(79);
+        let maps = vec![Map::new(52, 50, 48), Map::new(50 , 98, 2)];
+
+        let number = maps.iter()
+            .filter_map(|map| match map.in_range(&seed) {
+                true => Some(map.redirect(&seed)),
+                false => None
+            })
+            .min()
+            .expect("Should be a number");
+
+        assert_eq!(number, 81);
+    }
 
     #[test]
     fn test_input() {
@@ -188,6 +244,6 @@ humidity-to-location map:
 60 56 37
 56 93 4";
         
-        assert_eq!("", process_input(str));
+        assert_eq!("35", process_input(str));
     }
 }
