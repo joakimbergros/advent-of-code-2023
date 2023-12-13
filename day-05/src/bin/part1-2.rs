@@ -162,6 +162,6 @@ humidity-to-location map:
 60 56 37
 56 93 4";
         
-        assert_eq!("46", process_input(str));
+        assert_eq!("35", process_input(str));
     }
 }
