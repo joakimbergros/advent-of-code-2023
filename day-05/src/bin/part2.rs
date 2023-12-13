@@ -1,4 +1,5 @@
-use std::collections::BTreeMap;
+use core::panic;
+use std::{collections::BTreeMap, ops::RangeInclusive};
 
 fn main() {
     let str = include_str!("part1.txt");
@@ -8,14 +9,35 @@ fn main() {
 
 fn process_input(input: &str) -> String {
     let mut almanac_iterator = input.lines();
-    let seeds = almanac_iterator.next()
+    /* let seeds = almanac_iterator.next()
         .expect("Should be the first line")
         .split(": ")
         .last()
         .expect("Should be only the numbers")
         .split(' ')
         .map(|seed| seed.parse::<u64>().expect("Should be a number"))
-        .collect::<Vec<u64>>();
+        .collect::<Vec<u64>>(); */
+    /* let mut seeds: Vec<u64> = vec![];
+    let mut current_numbers: Vec<u64> = vec![];
+
+    let mut current_number: u64 = 0;
+    let mut current_number_finished = false;
+    let mut current_length: u64 = 0;
+    let mut current_length_finished = false; */
+    
+    println!("=== Parsing seeds ===");
+    let mut seeds = almanac_iterator.next()
+        .expect("Should be the first line with seeds")
+        .split(' ')
+        .skip(1)
+        .collect::<Vec<&str>>()
+        .chunks(2)
+        .map(|pair| {
+            println!("[i] Parsing '{:?}' ===", pair);
+            (pair[0].parse::<u64>().expect("Should be the first of two numbers"),
+            pair[1].parse::<u64>().expect("Should be the first of two numbers"))
+        })
+        .collect::<Vec<(u64, u64)>>();
 
     let mut current_category = Category::None;
     let mut maps: BTreeMap<Category, Vec<(u64, u64, u64)>> = BTreeMap::new();
@@ -24,6 +46,7 @@ fn process_input(input: &str) -> String {
     for line in almanac_iterator {
         if line.is_empty() {
             println!("=== End of block ===");
+            println!();
             continue;
         }
 
@@ -43,7 +66,7 @@ fn process_input(input: &str) -> String {
             continue;
         }
 
-        println!("=== Parsing map '{}' ===", line);
+        println!("[i] Parsing map '{}'", line);
         // 0 - Destination, 1 - Source, 2 - Length
         let routing = line.split(' ')
             .map(|number| number.parse::<u64>().expect("Should be a valid number"))
@@ -56,42 +79,44 @@ fn process_input(input: &str) -> String {
                 .or_insert(vec![touple]);
     }
 
-    for seed in seeds {
-        println!("*** Mapping seed '{}' ***", &seed);
-        let mut currently_mapped = seed;
-
-        for (category, maps) in &maps {
-            let mut lowest_number: Option<u64> = None;
-            
-            println!("[i] Category is '{:?}'", &category);
-            for map in maps {
-                println!("[i] Map is '{:?}'", &map);
-                if currently_mapped < map.1 || currently_mapped > (map.1 + map.2) {
-                    println!("[-] Seed is not in range");
-                    continue;
+    for range in seeds.into_iter().take(1).map(|f| RangeInclusive::new(f.0, f.1)) {
+        for seed in range.into_iter() {
+            println!("*** Mapping seed '{:?}' ***", &seed);
+            let mut currently_mapped = seed;
+    
+            for (category, maps) in &maps {
+                let mut lowest_number: Option<u64> = None;
+                
+                println!("[i] Category is '{:?}'", &category);
+                for map in maps {
+                    println!("[i] Map is '{:?}'", &map);
+                    if currently_mapped < map.1 || currently_mapped > (map.1 + map.2) {
+                        println!("[-] Seed is not in range");
+                        continue;
+                    }
+    
+                    println!("[+] Seed is in range");
+                    let candidate = map.0 + currently_mapped - map.1;
+    
+                    lowest_number = match lowest_number {
+                        Some(val) if val < candidate => Some(val),
+                        _ => Some(candidate),
+                    };
+    
+                    break;
                 }
-
-                println!("[+] Seed is in range");
-                let candidate = map.0 + currently_mapped - map.1;
-
-                lowest_number = match lowest_number {
-                    Some(val) if val < candidate => Some(val),
-                    _ => Some(candidate),
-                };
-
-                break;
+    
+                currently_mapped = lowest_number.unwrap_or(currently_mapped);
+                println!("*** New value is {:?}", currently_mapped);
+                println!();
             }
-
-            currently_mapped = lowest_number.unwrap_or(currently_mapped);
-            println!("*** New value is {:?}", currently_mapped);
+    
+            println!("<======!!! Lowest map is '{}' !!!======>", currently_mapped);
             println!();
-        }
-
-        println!("<======!!! Lowest map is '{}' !!!======>", currently_mapped);
-        println!();
-
-        if lowest_path == 0 || currently_mapped < lowest_path {
-            lowest_path = currently_mapped;
+    
+            if lowest_path == 0 || currently_mapped < lowest_path {
+                lowest_path = currently_mapped;
+            }
         }
     }
 
