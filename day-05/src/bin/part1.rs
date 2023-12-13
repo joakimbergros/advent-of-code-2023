@@ -14,7 +14,7 @@ fn process_input(input: &str) -> String {
         .last()
         .expect("Should be only the numbers")
         .split(' ')
-        .map(|seed| Seed::new(seed.parse::<u32>().expect("Should be a number")))
+        .map(|seed| Seed::new(seed.parse::<u64>().expect("Should be a number")))
         .collect::<Vec<Seed>>();
 
     let mut shelf = Shelf::new();
@@ -43,12 +43,12 @@ fn process_input(input: &str) -> String {
 
         // 0 - Destination, 1 - Source, 2 - Length
         let routing = line.split(' ')
-            .map(|number| number.parse::<u32>().expect("Should be a valid number"))
-            .collect::<Vec<u32>>();
+            .map(|number| number.parse::<u64>().expect("Should be a valid number"))
+            .collect::<Vec<u64>>();
 
         //dbg!(&routing);
 
-        shelf.set(current_category, Map::new(routing[0], routing[1], routing[2]));
+        shelf.add(current_category, Map::new(routing[0], routing[1], routing[2]));
     }
 
     let minimum_number = seeds.iter_mut()
@@ -62,19 +62,19 @@ fn process_input(input: &str) -> String {
 #[derive(Debug)]
 struct Seed {
     //start: u32,
-    route: Vec<u32>
+    route: Vec<u64>
 }
 
 impl Seed {
-    fn new(start: u32) -> Self {
+    fn new(start: u64) -> Self {
         Seed { /* start, */ route: vec![start] }
     }
 
-    fn set(&mut self, next: u32) {
+    fn set(&mut self, next: u64) {
         self.route.push(next);
     }
 
-    fn get(&self) -> u32 {
+    fn get(&self) -> u64 {
         *self.route.iter().last().expect("Should be at least one")
     }
 }
@@ -90,18 +90,19 @@ impl Shelf {
         Shelf { shelf: BTreeMap::new() }
     }
 
-    fn set(&mut self, category: Category, map: Map) {
+    fn add(&mut self, category: Category, map: Map) {
         self.shelf.entry(category)
             .and_modify(|list| list.push(map))
-            .or_insert(vec![]);
+            .or_insert(vec![map]);
     }
 
-    fn find_location(&self, seed: &mut Seed) -> u32 {
-        dbg!(&seed);
+    fn find_location(&self, seed: &mut Seed) -> u64 {
         let final_value = self.shelf.values()
             .filter_map(|maps| {
+                //dbg!(&maps);
                 match maps.iter()
                     .filter_map(|map| {
+                        dbg!(&seed);
                         dbg!(&map);
                         dbg!(&map.in_range(seed));
                         match map.in_range(seed) {
@@ -127,20 +128,20 @@ impl Shelf {
             })
             .min()
             .expect("Should have found a number");
-        dbg!(final_value);
+        //dbg!(final_value);
         final_value
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 struct Map {
-    destination: u32,
-    source: u32,
-    length: u32
+    destination: u64,
+    source: u64,
+    length: u64
 }
 
 impl Map {
-    fn new(destination: u32, source: u32, length: u32) -> Self {
+    fn new(destination: u64, source: u64, length: u64) -> Self {
         Map { destination, source, length }
     }
 
@@ -148,7 +149,7 @@ impl Map {
         source.get() >= self.source && source.get() <= self.source + self.length
     }
 
-    fn redirect(&self, source: &Seed) -> u32 {
+    fn redirect(&self, source: &Seed) -> u64 {
         match source.get() >= self.source && source.get() <= self.source + self.length {
             true => self.destination + (source.get() - self.source),
             false => source.get(),
