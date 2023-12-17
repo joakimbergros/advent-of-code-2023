@@ -1,28 +1,12 @@
 use std::{ops::Range, error::Error};
 use nom_supreme::ParserExt;
 
-use nom::{
-    sequence::{tuple, separated_pair},
-    character::complete::{
-        u64,
-        line_ending,
-        space1
-    },
-    IResult,
-    bytes::complete::{
-        tag,
-        take_until
-    },
-    multi::{
-        many1,
-        separated_list1
-    },
-    Parser
-};
+use nom::{sequence::{preceded, tuple}, character::complete::{u64, line_ending, space1}, IResult, bytes::complete::{tag, take_until}, multi::{many1, separated_list1}, Parser};
 
 fn main() -> Result<(), Box<dyn Error>> {
     let str = include_str!("part2.txt");
     let sum = process_input(str);
+    let (input, seeds) = parse(str)?;
     println!("{sum}");
 
     Ok(())
@@ -34,8 +18,9 @@ fn process_input(input: &str) -> String {
 }
 
 fn parse(input: &str) -> IResult<&str, u64> {
+    //let (input, seeds) = preceded(tag("seeds:"), many1(preceded(tag(" "), u64)))(input)?;
     let (input, seeds) = tag("seeds: ")
-        .precedes(separated_list1(space1, separated_pair(u64, space1, u64).map(|(start, offset)| start..(start + offset) )))
+        .precedes(separated_list1(space1, u64))
         .parse(input)?;
 
     let (input, maps) = many1(take_until("map:")
@@ -45,9 +30,11 @@ fn parse(input: &str) -> IResult<&str, u64> {
         })))
         .parse(input)?;
 
-    let location = seeds.into_iter().map(|range| range.into_iter().map(|seed| {
-        maps.iter().fold(seed, |acc, map| map.translate(acc))
-    }).min().expect("should have a inner min mapped value"))
+    //dbg!(&seeds, maps);
+
+    let location = seeds.iter().map(|seed| {
+        maps.iter().fold(*seed, |acc, map| map.translate(acc))
+    })
     .min()
     .expect("should have a min mapped value");
 
@@ -131,6 +118,6 @@ humidity-to-location map:
 60 56 37
 56 93 4";
         
-        assert_eq!("46", process_input(str));
+        assert_eq!("35", process_input(str));
     }
 }
