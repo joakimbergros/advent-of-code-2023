@@ -1,12 +1,12 @@
 use std::{ops::Range, error::Error};
+use nom_supreme::ParserExt;
 
-use nom::{sequence::{tuple, preceded, terminated}, character::complete::{digit1, digit0, u8, u64}, IResult, bytes::complete::tag, multi::many1};
+use nom::{sequence::{preceded, tuple}, character::complete::{u64, line_ending}, IResult, bytes::complete::{tag, take_until}, multi::{many1, separated_list1}, Parser};
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let str = include_str!("part2.txt");
+    let str = include_str!("test.txt");
     let sum = process_input(str);
     let (input, seeds) = parse(str)?;
-    dbg!(seeds);
     println!("{sum}");
 
     Ok(())
@@ -18,10 +18,38 @@ fn process_input(input: &str) -> String {
 }
 
 fn parse(input: &str) -> IResult<&str, Vec<u64>> {
-    let (input, seeds) = preceded(tag("seeds:"), many1(preceded(tag(" "), u64)))(input)?;
-    //let (input, maps) = 
+    //let (input, seeds) = preceded(tag("seeds:"), many1(preceded(tag(" "), u64)))(input)?;
+    let (input, seeds) = tag("seeds: ")
+        .precedes(separated_list1(tag(" "), u64))
+        .parse(input)?;
+
+    let (input, maps) = take_until("map:")
+        .precedes(tag("map:"))
+        .precedes(many1(line_ending.precedes(map_line.map(|ranges| SeedMap {
+            source: ranges.0,
+            destination: ranges.1
+        }))))
+        .parse(input)?;
+
+    dbg!(&seeds, maps);
 
     Ok((input, seeds))
+}
+
+fn map_line(input: &str) -> IResult<&str, (Range<u64>, Range<u64>)> {
+    let (input, (destination, source, num)) = tuple((
+        u64,
+        u64.preceded_by(tag(" ")),
+        u64.preceded_by(tag(" "))
+    ))(input)?;
+
+    Ok((
+        input,
+        (
+            source..(source + num),
+            destination..(destination + num)
+        )
+    ))
 }
 
 #[derive(Debug)]
