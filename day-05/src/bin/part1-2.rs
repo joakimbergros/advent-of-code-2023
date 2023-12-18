@@ -8,7 +8,8 @@ fn main() {
 
 fn process_input(input: &str) -> String {
     let mut almanac_iterator = input.lines();
-    let seeds = almanac_iterator.next()
+    let seeds = almanac_iterator
+        .next()
         .expect("Should be the first line")
         .split(": ")
         .last()
@@ -27,7 +28,12 @@ fn process_input(input: &str) -> String {
             continue;
         }
 
-        if !line.chars().next().expect("Line should not be empty").is_ascii_digit() {
+        if !line
+            .chars()
+            .next()
+            .expect("Line should not be empty")
+            .is_ascii_digit()
+        {
             println!("=== Parsing '{}' ===", line);
             current_category = match line {
                 "seed-to-soil map:" => Category::SeedToSoil,
@@ -37,7 +43,7 @@ fn process_input(input: &str) -> String {
                 "light-to-temperature map:" => Category::LightToTemperature,
                 "temperature-to-humidity map:" => Category::TemperatureToHumidity,
                 "humidity-to-location map:" => Category::HumidityToLocation,
-                _ => unreachable!("Should always be a category assigned")
+                _ => unreachable!("Should always be a category assigned"),
             };
 
             continue;
@@ -45,15 +51,15 @@ fn process_input(input: &str) -> String {
 
         println!("=== Parsing map '{}' ===", line);
         // 0 - Destination, 1 - Source, 2 - Length
-        let routing = line.split(' ')
+        let routing = line
+            .split(' ')
             .map(|number| number.parse::<u64>().expect("Should be a valid number"))
             .collect::<Vec<u64>>();
         let touple = (routing[0], routing[1], routing[2]);
 
         maps.entry(current_category)
-            .and_modify(|map|
-                map.push(touple))
-                .or_insert(vec![touple]);
+            .and_modify(|map| map.push(touple))
+            .or_insert(vec![touple]);
     }
 
     for seed in seeds {
@@ -62,7 +68,7 @@ fn process_input(input: &str) -> String {
 
         for (category, maps) in &maps {
             let mut lowest_number: Option<u64> = None;
-            
+
             println!("[i] Category is '{:?}'", &category);
             for map in maps {
                 println!("[i] Map is '{:?}'", &map);
@@ -107,7 +113,7 @@ enum Category {
     WaterToLight,
     LightToTemperature,
     TemperatureToHumidity,
-    HumidityToLocation
+    HumidityToLocation,
 }
 
 impl Category {
@@ -161,7 +167,7 @@ temperature-to-humidity map:
 humidity-to-location map:
 60 56 37
 56 93 4";
-        
+
         assert_eq!("35", process_input(str));
     }
 }

@@ -1,23 +1,12 @@
-use std::{ops::Range, error::Error};
 use nom_supreme::ParserExt;
+use std::{error::Error, ops::Range};
 
 use nom::{
-    sequence::{tuple, separated_pair},
-    character::complete::{
-        u64,
-        line_ending,
-        space1
-    },
-    IResult,
-    bytes::complete::{
-        tag,
-        take_until
-    },
-    multi::{
-        many1,
-        separated_list1
-    },
-    Parser
+    bytes::complete::{tag, take_until},
+    character::complete::{line_ending, space1, u64},
+    multi::{many1, separated_list1},
+    sequence::{separated_pair, tuple},
+    IResult, Parser,
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -35,51 +24,55 @@ fn process_input(input: &str) -> String {
 
 fn parse(input: &str) -> IResult<&str, u64> {
     let (input, seeds) = tag("seeds: ")
-        .precedes(separated_list1(space1, separated_pair(u64, space1, u64).map(|(start, offset)| start..(start + offset) )))
+        .precedes(separated_list1(
+            space1,
+            separated_pair(u64, space1, u64).map(|(start, offset)| start..(start + offset)),
+        ))
         .parse(input)?;
 
-    let (input, maps) = many1(take_until("map:")
-        .precedes(tag("map:"))
-        .precedes(many1(line_ending.precedes(map_line)).map(|mappings| SeedMap {
-            mappings
-        })))
-        .parse(input)?;
+    let (input, maps) = many1(
+        take_until("map:")
+            .precedes(tag("map:"))
+            .precedes(many1(line_ending.precedes(map_line)).map(|mappings| SeedMap { mappings })),
+    )
+    .parse(input)?;
 
-    let location = seeds.into_iter().map(|range| range.into_iter().map(|seed| {
-        maps.iter().fold(seed, |acc, map| map.translate(acc))
-    }).min().expect("should have a inner min mapped value"))
-    .min()
-    .expect("should have a min mapped value");
+    let location = seeds
+        .into_iter()
+        .map(|range| {
+            range
+                .into_iter()
+                .map(|seed| maps.iter().fold(seed, |acc, map| map.translate(acc)))
+                .min()
+                .expect("should have a inner min mapped value")
+        })
+        .min()
+        .expect("should have a min mapped value");
 
     Ok((input, location))
 }
 
 fn map_line(input: &str) -> IResult<&str, (Range<u64>, Range<u64>)> {
-    let (input, (destination, source, num)) = tuple((
-        u64,
-        u64.preceded_by(tag(" ")),
-        u64.preceded_by(tag(" "))
-    ))(input)?;
+    let (input, (destination, source, num)) =
+        tuple((u64, u64.preceded_by(tag(" ")), u64.preceded_by(tag(" "))))(input)?;
 
     Ok((
         input,
-        (
-            source..(source + num),
-            destination..(destination + num)
-        )
+        (source..(source + num), destination..(destination + num)),
     ))
 }
 
 #[derive(Debug)]
 struct SeedMap {
-    mappings: Vec<(Range<u64>, Range<u64>)>
+    mappings: Vec<(Range<u64>, Range<u64>)>,
 }
 
 impl SeedMap {
     fn translate(&self, source: u64) -> u64 {
-        let valid_mapping = self.mappings.iter().find(|(source_range, _)| {
-            source_range.contains(&source)
-        });
+        let valid_mapping = self
+            .mappings
+            .iter()
+            .find(|(source_range, _)| source_range.contains(&source));
 
         let Some((source_range, destination_range)) = valid_mapping else {
             return source;
@@ -130,7 +123,7 @@ temperature-to-humidity map:
 humidity-to-location map:
 60 56 37
 56 93 4";
-        
+
         assert_eq!("46", process_input(str));
     }
 }

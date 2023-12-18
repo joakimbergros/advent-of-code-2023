@@ -7,7 +7,8 @@ fn main() {
 }
 
 fn process_input(input: &str) -> String {
-    let seeds = input.lines()
+    let seeds = input
+        .lines()
         .next()
         .expect("should be the first line")
         .split("seeds: ")
@@ -17,7 +18,8 @@ fn process_input(input: &str) -> String {
         .map(|num| num.parse::<u64>().expect("should be a valid number"))
         .collect::<Vec<u64>>();
 
-    let maps = input.lines()
+    let maps = input
+        .lines()
         .skip(3) // File is always the same
         .filter_map(parse_maps)
         .collect::<Vec<SeedMap>>();
@@ -29,26 +31,25 @@ fn process_input(input: &str) -> String {
 fn parse_maps(string: &str) -> Option<SeedMap> {
     match string.chars().next() {
         Some(val) if val.is_ascii_digit() => {
-            let tuple = string.split(' ')
-                .fold((0, (0, 0, 0)), |mut acc, str| {
-                    match acc.0 {
-                        0 => acc.1.0 = str.parse::<u64>().expect("should be the destination"),
-                        1 => acc.1.1 = str.parse::<u64>().expect("should be the source"),
-                        2 => acc.1.2 = str.parse::<u64>().expect("should be the length"),
-                        _ => unreachable!("should only be 3 numbers")
-                    }
+            let tuple = string.split(' ').fold((0, (0, 0, 0)), |mut acc, str| {
+                match acc.0 {
+                    0 => acc.1 .0 = str.parse::<u64>().expect("should be the destination"),
+                    1 => acc.1 .1 = str.parse::<u64>().expect("should be the source"),
+                    2 => acc.1 .2 = str.parse::<u64>().expect("should be the length"),
+                    _ => unreachable!("should only be 3 numbers"),
+                }
 
-                    acc.0 += 1;
+                acc.0 += 1;
 
-                    acc
-                });
+                acc
+            });
 
             Some(SeedMap {
-                source: tuple.1.1..tuple.1.1+tuple.1.2,
-                destination: tuple.1.0..tuple.1.0+tuple.1.2,
+                source: tuple.1 .1..tuple.1 .1 + tuple.1 .2,
+                destination: tuple.1 .0..tuple.1 .0 + tuple.1 .2,
             })
         }
-        _ => { None },
+        _ => None,
     }
 }
 
@@ -97,7 +98,7 @@ temperature-to-humidity map:
 humidity-to-location map:
 60 56 37
 56 93 4";
-        
+
         assert_eq!("46", process_input(str));
     }
 }

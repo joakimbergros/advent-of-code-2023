@@ -8,7 +8,8 @@ fn main() {
 
 fn process_input(input: &str) -> String {
     let mut almanac_iterator = input.lines();
-    let mut seeds = almanac_iterator.next()
+    let mut seeds = almanac_iterator
+        .next()
         .expect("Should be the first line")
         .split(": ")
         .last()
@@ -26,7 +27,12 @@ fn process_input(input: &str) -> String {
             continue;
         }
 
-        if !line.chars().next().expect("Line should not be empty").is_ascii_digit() {
+        if !line
+            .chars()
+            .next()
+            .expect("Line should not be empty")
+            .is_ascii_digit()
+        {
             current_category = match line {
                 "seed-to-soil map:" => Category::SeedToSoil,
                 "soil-to-fertilizer map:" => Category::SoilToFertilizer,
@@ -35,23 +41,28 @@ fn process_input(input: &str) -> String {
                 "light-to-temperature map:" => Category::LightToTemperature,
                 "temperature-to-humidity map:" => Category::TemperatureToHumidity,
                 "humidity-to-location map:" => Category::HumidityToLocation,
-                _ => unreachable!("Should always be a category assigned")
+                _ => unreachable!("Should always be a category assigned"),
             };
 
             continue;
         }
 
         // 0 - Destination, 1 - Source, 2 - Length
-        let routing = line.split(' ')
+        let routing = line
+            .split(' ')
             .map(|number| number.parse::<u64>().expect("Should be a valid number"))
             .collect::<Vec<u64>>();
 
         //dbg!(&routing);
 
-        shelf.add(current_category, Map::new(routing[0], routing[1], routing[2]));
+        shelf.add(
+            current_category,
+            Map::new(routing[0], routing[1], routing[2]),
+        );
     }
 
-    let minimum_number = seeds.iter_mut()
+    let minimum_number = seeds
+        .iter_mut()
         .map(|seed| shelf.find_location(seed))
         .min()
         .expect("Should have a number");
@@ -62,12 +73,14 @@ fn process_input(input: &str) -> String {
 #[derive(Debug)]
 struct Seed {
     //start: u32,
-    route: Vec<u64>
+    route: Vec<u64>,
 }
 
 impl Seed {
     fn new(start: u64) -> Self {
-        Seed { /* start, */ route: vec![start] }
+        Seed {
+            /* start, */ route: vec![start],
+        }
     }
 
     fn set(&mut self, next: u64) {
@@ -81,47 +94,52 @@ impl Seed {
 
 #[derive(Debug)]
 struct Shelf {
-    shelf: BTreeMap<Category, Vec<Map>>
+    shelf: BTreeMap<Category, Vec<Map>>,
 }
 
 impl Shelf {
     fn new() -> Self {
         //let maps: BTreeMap<Category, Vec<Map>> = Category::values().into_iter().map(|c| (*c, vec![])).collect();
-        Shelf { shelf: BTreeMap::new() }
+        Shelf {
+            shelf: BTreeMap::new(),
+        }
     }
 
     fn add(&mut self, category: Category, map: Map) {
-        self.shelf.entry(category)
+        self.shelf
+            .entry(category)
             .and_modify(|list| list.push(map))
             .or_insert(vec![map]);
     }
 
     fn find_location(&self, seed: &mut Seed) -> u64 {
-        let final_value = self.shelf.values()
+        let final_value = self
+            .shelf
+            .values()
             .filter_map(|maps| {
                 //dbg!(&maps);
-                match maps.iter()
+                match maps
+                    .iter()
                     .filter_map(|map| {
                         dbg!(&seed);
                         dbg!(&map);
                         dbg!(&map.in_range(seed));
                         match map.in_range(seed) {
                             true => Some(map.redirect(seed)),
-                            false => None
+                            false => None,
                         }
                     })
                     .inspect(|location| {
                         dbg!(location);
                     })
-                    .min() {
-                        Some(val) => {
-                            seed.set(val);
-                            Some(val)
-                        },
-                        None => {
-                            None
-                        }
+                    .min()
+                {
+                    Some(val) => {
+                        seed.set(val);
+                        Some(val)
                     }
+                    None => None,
+                }
             })
             .inspect(|contender| {
                 dbg!(contender);
@@ -137,12 +155,16 @@ impl Shelf {
 struct Map {
     destination: u64,
     source: u64,
-    length: u64
+    length: u64,
 }
 
 impl Map {
     fn new(destination: u64, source: u64, length: u64) -> Self {
-        Map { destination, source, length }
+        Map {
+            destination,
+            source,
+            length,
+        }
     }
 
     fn in_range(&self, source: &Seed) -> bool {
@@ -166,7 +188,7 @@ enum Category {
     WaterToLight,
     LightToTemperature,
     TemperatureToHumidity,
-    HumidityToLocation
+    HumidityToLocation,
 }
 
 impl Category {
@@ -188,7 +210,7 @@ mod tests {
     #[test]
     fn test_in_range() {
         let seed = Seed::new(99);
-        let map = Map::new(50 , 98, 2);
+        let map = Map::new(50, 98, 2);
 
         assert!(map.in_range(&seed));
     }
@@ -196,12 +218,13 @@ mod tests {
     #[test]
     fn test_redirect() {
         let seed = Seed::new(79);
-        let maps = vec![Map::new(52, 50, 48), Map::new(50 , 98, 2)];
+        let maps = vec![Map::new(52, 50, 48), Map::new(50, 98, 2)];
 
-        let number = maps.iter()
+        let number = maps
+            .iter()
             .filter_map(|map| match map.in_range(&seed) {
                 true => Some(map.redirect(&seed)),
-                false => None
+                false => None,
             })
             .min()
             .expect("Should be a number");
@@ -244,7 +267,7 @@ temperature-to-humidity map:
 humidity-to-location map:
 60 56 37
 56 93 4";
-        
+
         assert_eq!("35", process_input(str));
     }
 }
