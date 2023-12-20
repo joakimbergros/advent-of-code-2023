@@ -1,14 +1,24 @@
-use std::{cmp::Ordering, collections::BTreeMap};
+use std::{
+    cmp::{self, Ordering},
+    collections::BTreeMap,
+};
 
 fn main() {
-    let str = include_str!("test.txt");
+    let str = include_str!("part1.txt");
     let sum = process_input(str);
     println!("{sum}");
 }
 
 fn process_input(input: &str) -> String {
-    dbg!(parse(input));
-    "".to_string()
+    let mut hands = parse(input);
+    hands.sort();
+
+    let result = hands
+        .iter()
+        .enumerate()
+        .fold(0, |acc, (index, val)| acc + val.bid * (index as u32 + 1));
+
+    result.to_string()
 }
 
 fn parse(input: &str) -> Vec<Hand> {
@@ -49,7 +59,8 @@ impl Hand {
             [1, 1, 3] => HandType::ThreeOfAKind,
             [1, 2, 2] => HandType::TwoPair,
             [1, 1, 1, 2] => HandType::OnePair,
-            _ => HandType::HighCard,
+            [1, 1, 1, 1, 1] => HandType::HighCard,
+            _ => unreachable!("should be no more combos"),
         };
 
         Hand {
@@ -57,29 +68,6 @@ impl Hand {
             hand_type,
             bid: bid.parse::<u32>().expect("should be a valid bid"),
         }
-    }
-
-    fn get_type(&self) -> HandType {
-        let hash_map: BTreeMap<&Card, u32> =
-            self.cards.iter().fold(BTreeMap::new(), |mut map, card| {
-                map.entry(card).and_modify(|count| *count += 1).or_insert(1);
-                map
-            });
-
-        let ordered_list = dbg!(hash_map.values().collect::<Vec<&u32>>());
-        match ordered_list[..] {
-            [5] => HandType::FiveOfAKind,
-            [1, 4] => HandType::FourOfAKind,
-            [2, 3] => HandType::FullHouse,
-            [1, 1, 3] => HandType::ThreeOfAKind,
-            [1, 2, 2] => HandType::TwoPair,
-            [1, 1, 1, 2] => HandType::OnePair,
-            _ => HandType::HighCard,
-        }
-    }
-
-    fn get_value(&self) -> u32 {
-        self.cards.iter().map(|card| card.strength()).sum()
     }
 }
 
@@ -96,7 +84,26 @@ impl Ord for Hand {
             return compare;
         }
 
-        Ordering::Less
+        // self.cards
+        //     .first()
+        //     .expect("should be a card")
+        //     .cmp(other.cards.first().expect("should be a card"))
+        let mut other_cards = other.cards.iter();
+        let mut cards = self.cards.iter();
+
+        loop {
+            let card_strength = cards.next().expect("should be a card").strength();
+            let other_card_strength = other_cards.next().expect("should be a card").strength();
+
+            if card_strength == other_card_strength {
+                continue;
+            }
+
+            return match card_strength > other_card_strength {
+                true => Ordering::Greater,
+                false => Ordering::Less,
+            };
+        }
     }
 }
 
@@ -141,20 +148,51 @@ impl Ord for Card {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 enum HandType {
-    FiveOfAKind = 0,
-    FourOfAKind = 1,
-    FullHouse = 2,
-    ThreeOfAKind = 3,
-    TwoPair = 4,
-    OnePair = 5,
-    HighCard = 6,
+    FiveOfAKind,
+    FourOfAKind,
+    FullHouse,
+    ThreeOfAKind,
+    TwoPair,
+    OnePair,
+    HighCard,
+}
+
+impl HandType {
+    fn value(&self) -> u32 {
+        match self {
+            HandType::FiveOfAKind => 6,
+            HandType::FourOfAKind => 5,
+            HandType::FullHouse => 4,
+            HandType::ThreeOfAKind => 3,
+            HandType::TwoPair => 2,
+            HandType::OnePair => 1,
+            HandType::HighCard => 0,
+        }
+    }
+}
+
+impl PartialOrd for HandType {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for HandType {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.value().cmp(&other.value())
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_hand_type_ord() {
+        assert!(HandType::FiveOfAKind > HandType::FourOfAKind);
+    }
 
     #[test]
     fn test_hand_ordering() {
