@@ -92,17 +92,15 @@ impl Ord for Hand {
         let mut cards = self.cards.iter();
 
         loop {
-            let card_strength = cards.next().expect("should be a card").strength();
-            let other_card_strength = other_cards.next().expect("should be a card").strength();
+            let card_strength = cards.next().expect("should be a card");
+            let other_card_strength = other_cards.next().expect("should be a card");
 
-            if card_strength == other_card_strength {
+            let comparison = card_strength.cmp(other_card_strength);
+            if comparison == Ordering::Equal {
                 continue;
             }
 
-            return match card_strength > other_card_strength {
-                true => Ordering::Greater,
-                false => Ordering::Less,
-            };
+            return comparison;
         }
     }
 }
@@ -221,6 +219,6 @@ KTJJT 220
 QQQJA 483
 ";
 
-        assert_eq!("288", process_input(str));
+        assert_eq!("6440", process_input(str));
     }
 }
