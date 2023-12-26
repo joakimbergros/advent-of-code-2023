@@ -83,7 +83,7 @@ fn process_input(input: &str) -> String {
 
     let current_maps = map
         .keys()
-        .filter(|key| key.ends_with("A"))
+        .filter(|key| key.ends_with('A'))
         .cloned()
         .collect::<Vec<_>>();
 
@@ -107,7 +107,7 @@ fn process_input(input: &str) -> String {
                         Direction::Right => options.1,
                     };
 
-                    if next_node.ends_with("Z") {
+                    if next_node.ends_with('Z') {
                         Some(index + 1)
                     } else {
                         visited_nodes.push(next_node);
