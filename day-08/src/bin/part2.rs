@@ -1,5 +1,3 @@
-use std::{collections::BTreeMap, thread::current};
-
 use nom::{
     branch::alt,
     bytes::complete::tag,
@@ -9,6 +7,7 @@ use nom::{
     sequence::{delimited, separated_pair, terminated},
     IResult, Parser,
 };
+use std::collections::BTreeMap;
 
 fn main() {
     let str = include_str!("part1.txt");
@@ -81,7 +80,6 @@ fn process_input(input: &str) -> String {
     //         .expect("should be a valid map")
     // })
     // .collect::<BTreeMap<&str, (&str, &str)>>();
-
 
     let current_maps = map
         .keys()
