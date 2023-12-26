@@ -11,3 +11,20 @@ Iterating over the sliced line one index at a time made me able to check if slic
 The `std::iter::from_fn` was a nice tip and it makes you able to create an iteration from the callback return value.
 
 Great help from [Youtube](https://www.youtube.com/watch?v=JOgQMjpGum0) after I got stuck debugging this!
+
+## Day 2
+
+## Day 3
+
+## Day 4
+
+## Day 5
+
+## Day 6
+
+## Day 7
+
+## Day 8
+
+Part 1 was no problem, and part 2 i wrote logic that would've given the right answer but bruteforcing it would've taken months or years, so I ended up looking up someone elses sollution.  
+It got me to learn about LCM so that's always a plus!
