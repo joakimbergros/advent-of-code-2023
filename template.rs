@@ -1,11 +1,17 @@
+use nom::IResult;
+
 fn main() {
-    let str = include_str!("part2.txt");
-    let sum = process_input(str);
+    let str = include_str!("part1.txt");
+    let sum = process(str);
     println!("{sum}");
 }
 
-fn process_input(input: &str) -> String {
-    String::from("")
+fn parse(input: &str) -> IResult<&str, ()> {
+    ()
+}
+
+fn process(input: &str) -> String {
+    "0".to_string()
 }
 
 #[cfg(test)]
@@ -15,7 +21,7 @@ mod tests {
     #[test]
     fn test_input() {
         let str = "";
-        
-        assert_eq!("", process_input(str));
+
+        assert_eq!("", process(str));
     }
 }
