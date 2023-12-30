@@ -51,10 +51,13 @@ fn process(input: &str) -> String {
 
     // dbg!(&reductions);
 
-    let answer = reductions.iter().map(|series| {
-        // dbg!(series, series.first().unwrap());
-        series.first().unwrap().last().unwrap() 
-    }).sum::<i32>();
+    let answer = reductions
+        .iter()
+        .map(|series| {
+            // dbg!(series, series.first().unwrap());
+            series.first().unwrap().last().unwrap()
+        })
+        .sum::<i32>();
 
     answer.to_string()
 }

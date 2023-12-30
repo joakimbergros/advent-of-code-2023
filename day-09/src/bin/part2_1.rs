@@ -1,3 +1,5 @@
+use std::ops::Index;
+
 use nom::{
     branch::alt,
     character::complete::{i32, line_ending, space1},
@@ -24,38 +26,19 @@ fn process(input: &str) -> String {
     let (input, mut sequences) = parse(input).expect("successful parse");
     debug_assert_eq!(input, "");
 
-    // dbg!(&sequences);
+    dbg!(&sequences);
 
-    let mut reductions: Vec<_> = sequences
-        .iter_mut()
-        .map(|seq| {
-            while !seq
-                .last()
-                .expect("should always be one")
-                .iter()
-                .all(|n| *n == 0)
-            {
-                seq.push(reduce(seq.last().expect("should be the latests")));
-            }
-            seq
+    let answer: i32 = sequences.into_iter()
+        .map(|sequence| {
+            sequence.iter().map(|series| {
+                let mut collection: Vec<Vec<i32>> = vec![];
+                collection.push(series.clone());
+
+                dbg!(collection);
+            });
+            0
         })
-        .collect();
-
-    for reduction in reductions.iter_mut() {
-        dbg!(&reduction[0]);
-        // let last_number = &reduction[reduction.len() - 1]; 
-        // dbg!(last_number);
-    }
-
-    // for reduction in reductions.iter_mut() {
-    //     let mut prev_next = 0i32;
-    //     for item in reduction.iter_mut().rev() {
-    //         prev_next = *item.last().unwrap();
-    //         item.push(prev_next + 1);
-    //     }
-    // }
-
-    /* dbg!(reductions); */
+        .sum();
 
     "".to_string()
 }
