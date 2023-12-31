@@ -1,5 +1,3 @@
-use std::ops::Index;
-
 use nom::{
     branch::alt,
     character::complete::{i32, line_ending, space1},
@@ -15,27 +13,23 @@ fn main() {
     println!("{sum}");
 }
 
-fn parse(input: &str) -> IResult<&str, Vec<Vec<Vec<i32>>>> {
+fn parse(input: &str) -> IResult<&str, Vec<Vec<i32>>> {
     many1(terminated(
-        many1(separated_list1(space1, i32)),
+        separated_list1(space1, i32),
         alt((line_ending, eof)),
     ))(input)
 }
 
 fn process(input: &str) -> String {
-    let (input, mut sequences) = parse(input).expect("successful parse");
+    let (input, sequences) = parse(input).expect("successful parse");
     debug_assert_eq!(input, "");
 
     dbg!(&sequences);
 
     let answer: i32 = sequences.into_iter()
         .map(|sequence| {
-            sequence.iter().map(|series| {
-                let mut collection: Vec<Vec<i32>> = vec![];
-                collection.push(series.clone());
-
-                dbg!(collection);
-            });
+            dbg!(&sequence);
+            let tets = dbg!(reduce(&sequence));
             0
         })
         .sum();
